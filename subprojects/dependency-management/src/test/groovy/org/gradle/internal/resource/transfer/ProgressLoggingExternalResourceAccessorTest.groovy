@@ -18,6 +18,7 @@ package org.gradle.internal.resource.transfer
 
 import org.gradle.internal.logging.progress.ProgressLogger
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
+import org.gradle.internal.resource.ExternalResource
 import org.gradle.internal.resource.metadata.ExternalResourceMetaData
 import spock.lang.Specification
 
@@ -29,7 +30,7 @@ class ProgressLoggingExternalResourceAccessorTest extends Specification {
     ProgressLogger progressLogger = Mock()
     ExternalResourceReadResponse externalResource = Mock()
     ExternalResourceMetaData metaData = Mock()
-    ExternalResourceAccessor.ContentAndMetadataAction action = Mock()
+    ExternalResource.ContentAndMetadataAction action = Mock()
     URI location = new URI("location")
 
     def setup() {
