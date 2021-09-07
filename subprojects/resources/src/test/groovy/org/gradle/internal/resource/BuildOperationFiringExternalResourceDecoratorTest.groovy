@@ -96,24 +96,24 @@ class BuildOperationFiringExternalResourceDecoratorTest extends Specification {
         }
 
         @Override
-        def <T> ExternalResourceReadResult<T> withContent(Transformer<? extends T, ? super InputStream> readAction) throws ResourceException {
+        def <T> ExternalResourceReadResult<T> withContent(ContentAction<? extends T> readAction) throws ResourceException {
             mock.withContent(readAction)
             ExternalResourceReadResult.of(READ_CONTENT_LENGTH, readAction.transform(new NullInputStream(0)))
         }
 
         @Override
-        def <T> ExternalResourceReadResult<T> withContent(ExternalResource.ContentAction<? extends T> readAction) throws ResourceException {
+        def <T> ExternalResourceReadResult<T> withContent(ContentAndMetadataAction<? extends T> readAction) throws ResourceException {
             mock.withContent(readAction)
             ExternalResourceReadResult.of(READ_CONTENT_LENGTH, readAction.execute(new NullInputStream(0), getMetaData()))
         }
 
         @Override
-        def <T> ExternalResourceReadResult<T> withContentIfPresent(Transformer<? extends T, ? super InputStream> readAction) throws ResourceException {
+        def <T> ExternalResourceReadResult<T> withContentIfPresent(ContentAction<? extends T> readAction) throws ResourceException {
             throw new UnsupportedOperationException()
         }
 
         @Override
-        def <T> ExternalResourceReadResult<T> withContentIfPresent(ExternalResource.ContentAction<? extends T> readAction) throws ResourceException {
+        def <T> ExternalResourceReadResult<T> withContentIfPresent(ContentAndMetadataAction<? extends T> readAction) throws ResourceException {
             throw new UnsupportedOperationException()
         }
 
@@ -169,7 +169,7 @@ class BuildOperationFiringExternalResourceDecoratorTest extends Specification {
         'writeTo'     | Mock(File)                           | "writeTo(File)"
         'writeTo'     | Mock(OutputStream)                   | "writeTo(OutputStream)"
         'withContent' | Mock(Action)                         | "withContent(Action<InputStream>)"
-        'withContent' | Mock(ExternalResource.ContentAction) | "withContent(ContentAction<InputStream>)"
+        'withContent' | Mock(ExternalResource.ContentAndMetadataAction) | "withContent(ContentAction<InputStream>)"
         'withContent' | Mock(Transformer)                    | "withContent(Transformer<T, ? extends InputStream)"
     }
 
@@ -285,7 +285,7 @@ class BuildOperationFiringExternalResourceDecoratorTest extends Specification {
         'writeTo'     | Mock(File)                           | "writeTo(File)"
         'writeTo'     | Mock(OutputStream)                   | "writeTo(OutputStream)"
         'withContent' | Mock(Action)                         | "withContent(Action<InputStream>)"
-        'withContent' | Mock(ExternalResource.ContentAction) | "withContent(ContentAction<InputStream>)"
+        'withContent' | Mock(ExternalResource.ContentAndMetadataAction) | "withContent(ContentAction<InputStream>)"
         'withContent' | Mock(Transformer)                    | "withContent(Transformer<T, ? extends InputStream)"
     }
 

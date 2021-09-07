@@ -114,7 +114,7 @@ class AccessorBackedExternalResourceTest extends Specification {
 
     def "can apply ContentAction to the content of the resource"() {
         def name = new ExternalResourceName("resource")
-        def action = Mock(ExternalResource.ContentAction)
+        def action = Mock(ExternalResource.ContentAndMetadataAction)
 
         def resource = new AccessorBackedExternalResource(name, resourceAccessor, resourceUploader, resourceLister, true)
         def metaData = Stub(ExternalResourceMetaData)
@@ -191,7 +191,7 @@ class AccessorBackedExternalResourceTest extends Specification {
 
     def "closes response when ContentAction fails"() {
         def name = new ExternalResourceName("resource")
-        def action = Mock(ExternalResource.ContentAction)
+        def action = Mock(ExternalResource.ContentAndMetadataAction)
 
         def resource = new AccessorBackedExternalResource(name, resourceAccessor, resourceUploader, resourceLister, true)
         def metaData = Stub(ExternalResourceMetaData)
@@ -274,7 +274,7 @@ class AccessorBackedExternalResourceTest extends Specification {
 
     def "returns null and does not invoke ContentAction when resource does not exist"() {
         def name = new ExternalResourceName("resource")
-        def action = Mock(ExternalResource.ContentAction)
+        def action = Mock(ExternalResource.ContentAndMetadataAction)
 
         def resource = new AccessorBackedExternalResource(name, resourceAccessor, resourceUploader, resourceLister, true)
 
@@ -290,7 +290,7 @@ class AccessorBackedExternalResourceTest extends Specification {
 
     def "fails and does not invoke ContentAction when resource does not exist"() {
         def name = new ExternalResourceName("resource")
-        def action = Mock(ExternalResource.ContentAction)
+        def action = Mock(ExternalResource.ContentAndMetadataAction)
 
         def resource = new AccessorBackedExternalResource(name, resourceAccessor, resourceUploader, resourceLister, true)
 

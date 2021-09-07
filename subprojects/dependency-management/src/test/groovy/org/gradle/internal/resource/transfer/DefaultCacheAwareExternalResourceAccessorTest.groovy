@@ -125,7 +125,7 @@ class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
         1 * repository.withProgressLogging() >> progressLoggingRepo
         1 * progressLoggingRepo.resource(location) >> remoteResource
         _ * remoteResource.name >> "remoteResource"
-        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAction a ->
+        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAndMetadataAction a ->
             a.execute(new ByteArrayInputStream(), metaData)
         }
 
@@ -326,7 +326,7 @@ class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
         1 * remoteSha1.withContentIfPresent(_) >> null
         1 * repository.withProgressLogging() >> progressLoggingRepo
         1 * progressLoggingRepo.resource(location, true) >> remoteResource
-        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAction a ->
+        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAndMetadataAction a ->
             a.execute(new ByteArrayInputStream(), remoteMetaData)
         }
         0 * _._
@@ -373,7 +373,7 @@ class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
         }
         1 * repository.withProgressLogging() >> progressLoggingRepo
         1 * progressLoggingRepo.resource(location, true) >> remoteResource
-        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAction a ->
+        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAndMetadataAction a ->
             a.execute(new ByteArrayInputStream(), remoteMetaData)
         }
         0 * _._
@@ -425,7 +425,7 @@ class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
         cached.cachedFile >> cachedFile
         1 * repository.withProgressLogging() >> progressLoggingRepo
         1 * progressLoggingRepo.resource(location, true) >> remoteResource
-        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAction a ->
+        1 * remoteResource.withContentIfPresent(_) >> { ExternalResource.ContentAndMetadataAction a ->
             a.execute(new ByteArrayInputStream(), remoteMetaData)
         }
         0 * _._

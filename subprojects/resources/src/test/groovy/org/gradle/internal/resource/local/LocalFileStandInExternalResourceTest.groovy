@@ -37,7 +37,7 @@ class LocalFileStandInExternalResourceTest extends Specification {
 
         expect:
         def resource = new LocalFileStandInExternalResource(file, TestFiles.fileSystem())
-        def result = resource.withContentIfPresent(new ExternalResource.ContentAction<String>() {
+        def result = resource.withContentIfPresent(new ExternalResource.ContentAndMetadataAction<String>() {
             @Override
             String execute(InputStream inputStream, ExternalResourceMetaData metaData) throws IOException {
                 assert metaData.location == file.toURI()
@@ -51,7 +51,7 @@ class LocalFileStandInExternalResourceTest extends Specification {
         result.result == "result 1"
         result.bytesRead == 4
 
-        def result2 = resource.withContent(new ExternalResource.ContentAction<String>() {
+        def result2 = resource.withContent(new ExternalResource.ContentAndMetadataAction<String>() {
             @Override
             String execute(InputStream inputStream, ExternalResourceMetaData metaData) throws IOException {
                 assert metaData.location == file.toURI()
@@ -71,7 +71,7 @@ class LocalFileStandInExternalResourceTest extends Specification {
         def file = tmpDir.createFile("content")
         file.text = "1234"
         def failure = new RuntimeException()
-        def action = Stub(ExternalResource.ContentAction)
+        def action = Stub(ExternalResource.ContentAndMetadataAction)
         action.execute(_, _) >> { throw failure }
 
         def resource = new LocalFileStandInExternalResource(file, TestFiles.fileSystem())
@@ -96,7 +96,7 @@ class LocalFileStandInExternalResourceTest extends Specification {
 
         expect:
         def resource = new LocalFileStandInExternalResource(file, TestFiles.fileSystem())
-        resource.withContentIfPresent({} as ExternalResource.ContentAction) == null
+        resource.withContentIfPresent({} as ExternalResource.ContentAndMetadataAction) == null
     }
 
     def "can fail on missing file when using ContentAction"() {
@@ -104,7 +104,7 @@ class LocalFileStandInExternalResourceTest extends Specification {
         def resource = new LocalFileStandInExternalResource(file, TestFiles.fileSystem())
 
         when:
-        resource.withContent({} as ExternalResource.ContentAction)
+        resource.withContent({} as ExternalResource.ContentAndMetadataAction)
 
         then:
         def e = thrown(MissingResourceException)
