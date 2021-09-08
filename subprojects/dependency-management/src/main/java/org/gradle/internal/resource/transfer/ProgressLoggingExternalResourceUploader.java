@@ -34,7 +34,6 @@ public class ProgressLoggingExternalResourceUploader extends AbstractProgressLog
     @Override
     public void upload(final ReadableContent resource, ExternalResourceName destination) throws IOException {
         final ResourceOperation uploadOperation = createResourceOperation(destination.getUri(), ResourceOperation.Type.upload, getClass(), resource.getContentLength());
-
         try {
             delegate.upload(new ProgressLoggingReadableContent(resource, uploadOperation), destination);
         } finally {

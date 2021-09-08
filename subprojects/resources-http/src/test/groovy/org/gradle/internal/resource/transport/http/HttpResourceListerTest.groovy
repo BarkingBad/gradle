@@ -28,11 +28,12 @@ class HttpResourceListerTest extends Specification {
     def "parses resource content"() {
         setup:
         def inputStream = new ByteArrayInputStream("<a href='child'/>".bytes)
+        def name = new ExternalResourceName("http://testrepo/")
 
         when:
-        lister.list(new ExternalResourceName("http://testrepo/"))
+        lister.list(name)
         then:
-        1 * accessorMock.withContent(new URI("http://testrepo/"), true, _) >> {  uri, revalidate, action ->
+        1 * accessorMock.withContent(name, true, _) >> {  uri, revalidate, action ->
             return action.execute(inputStream, metaData)
         }
         _ * metaData.getContentType() >> "text/html"
