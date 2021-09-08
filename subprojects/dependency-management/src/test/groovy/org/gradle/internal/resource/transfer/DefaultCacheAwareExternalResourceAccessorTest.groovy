@@ -42,7 +42,8 @@ import spock.lang.Issue
 import spock.lang.Specification
 
 class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
-    @Rule TestNameTestDirectoryProvider tempDir = new TestNameTestDirectoryProvider(getClass())
+    @Rule
+    TestNameTestDirectoryProvider tempDir = new TestNameTestDirectoryProvider(getClass())
     final repository = Mock(ExternalResourceRepository)
     final progressLoggingRepo = Mock(ExternalResourceRepository)
     final index = Mock(CachedExternalResourceIndex)
@@ -280,8 +281,8 @@ class DefaultCacheAwareExternalResourceAccessorTest extends Specification {
         cachedMetaData.etag >> null
         cachedMetaData.lastModified >> null
         1 * repository.resource(new ExternalResourceName("thing.sha1"), true) >> remoteSha1
-        1 * remoteSha1.withContentIfPresent(_) >> { Transformer t ->
-            ExternalResourceReadResult.of(1, t.transform(new ByteArrayInputStream(sha1.toString().getBytes("us-ascii"))))
+        1 * remoteSha1.withContentIfPresent(_) >> { ExternalResource.ContentAction action ->
+            ExternalResourceReadResult.of(1, action.execute(new ByteArrayInputStream(sha1.toString().getBytes("us-ascii"))))
         }
         1 * localCandidates.findByHashValue(sha1) >> localCandidate
         localCandidate.file >> candidate
