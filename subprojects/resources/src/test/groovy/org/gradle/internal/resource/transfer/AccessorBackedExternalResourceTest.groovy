@@ -17,7 +17,6 @@
 package org.gradle.internal.resource.transfer
 
 import org.gradle.api.Action
-import org.gradle.api.Transformer
 import org.gradle.api.resources.MissingResourceException
 import org.gradle.internal.resource.ExternalResource
 import org.gradle.internal.resource.ExternalResourceName

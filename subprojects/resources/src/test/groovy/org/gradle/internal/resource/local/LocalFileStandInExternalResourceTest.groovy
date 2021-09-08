@@ -17,7 +17,6 @@
 package org.gradle.internal.resource.local
 
 import org.gradle.api.Action
-import org.gradle.api.Transformer
 import org.gradle.api.internal.file.TestFiles
 import org.gradle.api.resources.MissingResourceException
 import org.gradle.api.resources.ResourceException
