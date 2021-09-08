@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -131,7 +132,7 @@ public class AccessorBackedExternalResource extends AbstractExternalResource {
             CountingReadableContent countingResource = new CountingReadableContent(source);
             uploader.upload(countingResource, getURI());
             return new ExternalResourceWriteResult(countingResource.getCount());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.putFailed(getURI(), e);
         }
     }

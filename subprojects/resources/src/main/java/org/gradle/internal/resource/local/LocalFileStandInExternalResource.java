@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -112,7 +113,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 input.close();
             }
             return ExternalResourceReadResult.of(input.getCount());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.getFailed(getURI(), e);
         }
     }
@@ -133,7 +134,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 input.close();
             }
             return ExternalResourceReadResult.of(input.getCount());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.getFailed(getURI(), e);
         }
     }
@@ -151,7 +152,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 input.close();
             }
             return ExternalResourceReadResult.of(input.getCount());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.getFailed(getURI(), e);
         }
     }
@@ -167,7 +168,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 T resourceReadResult = readAction.execute(input, getMetaData());
                 return ExternalResourceReadResult.of(input.getCount(), resourceReadResult);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.getFailed(getURI(), e);
         }
     }
@@ -183,7 +184,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 T resourceReadResult = readAction.execute(input);
                 return ExternalResourceReadResult.of(input.getCount(), resourceReadResult);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.getFailed(getURI(), e);
         }
     }
@@ -205,7 +206,7 @@ public class LocalFileStandInExternalResource extends AbstractExternalResource i
                 }
                 return new ExternalResourceWriteResult(output.getCount());
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw ResourceExceptions.putFailed(getURI(), e);
         }
     }

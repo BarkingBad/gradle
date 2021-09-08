@@ -86,7 +86,7 @@ class ProgressLoggingExternalResourceAccessorTest extends Specification {
         and:
         1 * progressLoggerFactory.newOperation(_) >> progressLogger
         1 * progressLogger.started()
-        1 * action.execute(_, _) >> { metaData, inputStream ->
+        1 * action.execute(_, _) >> { inputStream, metaData ->
             inputStream.read()
             inputStream.read()
             inputStream.read(new byte[560])
@@ -114,7 +114,7 @@ class ProgressLoggingExternalResourceAccessorTest extends Specification {
         then:
         1 * progressLoggerFactory.newOperation(_) >> progressLogger
         1 * progressLogger.started()
-        1 * action.execute(_, _) >> { metaData, inputStream ->
+        1 * action.execute(_, _) >> { inputStream, metaData ->
             inputStream.read(new byte[1600])
             "result"
         }
@@ -134,7 +134,7 @@ class ProgressLoggingExternalResourceAccessorTest extends Specification {
         then:
         1 * progressLoggerFactory.newOperation(_) >> progressLogger
         1 * progressLogger.started()
-        1 * action.execute(_, _) >> { metaData, inputStream ->
+        1 * action.execute(_, _) >> { inputStream, metaData ->
             inputStream.read(new byte[1024])
             "result"
         }
@@ -144,7 +144,7 @@ class ProgressLoggingExternalResourceAccessorTest extends Specification {
 
     def expectResourceRead(URI location, ExternalResourceMetaData metaData, InputStream inputStream) {
         1 * accessor.withContent(location, false, _) >> { uri, revalidate, action ->
-            action.execute(metaData, inputStream)
+            action.execute(inputStream, metaData)
         }
     }
 }
