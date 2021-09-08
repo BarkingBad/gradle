@@ -67,7 +67,6 @@ import org.gradle.util.internal.BuildCommencedTimeProvider;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 
 @ServiceScope(Scopes.BuildTree.class)
