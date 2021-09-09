@@ -33,6 +33,7 @@ import static java.lang.String.format;
 public class ExternalResourceName implements Describable {
     private final String encodedRoot;
     private final String path;
+    private final String encodedQuery;
 
     public ExternalResourceName(URI uri) {
         if (uri.getPath() == null) {
@@ -40,16 +41,19 @@ public class ExternalResourceName implements Describable {
         }
         this.encodedRoot = encodeRoot(uri);
         this.path = extractPath(uri);
+        this.encodedQuery = extractQuery(uri);
     }
 
     public ExternalResourceName(String path) {
         encodedRoot = null;
         this.path = path;
+        this.encodedQuery = null;
     }
 
     private ExternalResourceName(String encodedRoot, String path) {
         this.encodedRoot = encodedRoot;
         this.path = path;
+        this.encodedQuery = null;
     }
 
     public ExternalResourceName(URI parent, String path) {
@@ -70,6 +74,7 @@ public class ExternalResourceName implements Describable {
         }
         this.encodedRoot = encodeRoot(parent);
         this.path = newPath;
+        this.encodedQuery = null;
     }
 
     private boolean isFileOnHost(URI uri) {
@@ -81,6 +86,10 @@ public class ExternalResourceName implements Describable {
             return URI.create(parent.getPath()).getPath();
         }
         return parent.getPath();
+    }
+
+    private String extractQuery(URI uri) {
+        return uri.getRawQuery();
     }
 
     private String encodeRoot(URI uri) {
@@ -144,10 +153,14 @@ public class ExternalResourceName implements Describable {
      */
     public URI getUri() {
         try {
-            if (encodedRoot == null) {
-                return new URI(encode(path, false));
+            String pathAndQuery = encode(path, false);
+            if (encodedQuery!= null) {
+                pathAndQuery += "?" + encodedQuery;
             }
-            return new URI(encodedRoot + encode(path, true));
+            if (encodedRoot == null) {
+                return new URI(pathAndQuery);
+            }
+            return new URI(encodedRoot + pathAndQuery);
         } catch (URISyntaxException e) {
             throw UncheckedException.throwAsUncheckedException(e);
         }
