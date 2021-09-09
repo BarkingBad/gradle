@@ -45,6 +45,10 @@ public class ResourceOperation {
         this.contentLengthString = formatBytes(contentLength == 0 ? null : contentLength);
     }
 
+    public long getTotalProcessedBytes() {
+        return totalProcessedBytes;
+    }
+
     public void logProcessedBytes(long processedBytes) {
         totalProcessedBytes += processedBytes;
         long processedKiB = totalProcessedBytes / KIB_BASE;

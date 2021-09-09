@@ -17,28 +17,55 @@
 package org.gradle.internal.resource.transfer;
 
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.gradle.internal.operations.BuildOperationContext;
+import org.gradle.internal.operations.BuildOperationDescriptor;
+import org.gradle.internal.operations.BuildOperationExecutor;
+import org.gradle.internal.operations.RunnableBuildOperation;
 import org.gradle.internal.resource.ExternalResourceName;
+import org.gradle.internal.resource.ExternalResourceWriteBuildOperationType;
 import org.gradle.internal.resource.ReadableContent;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 
 public class ProgressLoggingExternalResourceUploader extends AbstractProgressLoggingHandler implements ExternalResourceUploader {
     private final ExternalResourceUploader delegate;
+    private final BuildOperationExecutor buildOperationExecutor;
 
-    public ProgressLoggingExternalResourceUploader(ExternalResourceUploader delegate, ProgressLoggerFactory progressLoggerFactory) {
+    public ProgressLoggingExternalResourceUploader(ExternalResourceUploader delegate, ProgressLoggerFactory progressLoggerFactory, BuildOperationExecutor buildOperationExecutor) {
         super(progressLoggerFactory);
         this.delegate = delegate;
+        this.buildOperationExecutor = buildOperationExecutor;
     }
 
     @Override
     public void upload(final ReadableContent resource, ExternalResourceName destination) throws IOException {
-        final ResourceOperation uploadOperation = createResourceOperation(destination.getUri(), ResourceOperation.Type.upload, getClass(), resource.getContentLength());
-        try {
-            delegate.upload(new ProgressLoggingReadableContent(resource, uploadOperation), destination);
-        } finally {
-            uploadOperation.completed();
-        }
+        buildOperationExecutor.run(new RunnableBuildOperation() {
+            @Override
+            public void run(BuildOperationContext context) throws IOException {
+                ResourceOperation uploadOperation = createResourceOperation(destination.getUri(), ResourceOperation.Type.upload, getClass(), resource.getContentLength());
+                try {
+                    delegate.upload(new ProgressLoggingReadableContent(resource, uploadOperation), destination);
+                    context.setResult(new ExternalResourceWriteBuildOperationType.Result() {
+                        @Override
+                        public long getBytesWritten() {
+                            return uploadOperation.getTotalProcessedBytes();
+                        }
+                    });
+                } finally {
+                    uploadOperation.completed();
+                }
+            }
+
+            @Override
+            public BuildOperationDescriptor.Builder description() {
+                return BuildOperationDescriptor
+                    .displayName("Upload " + destination.getDisplayName())
+                    .progressDisplayName(destination.getShortDisplayName())
+                    .details(new PutOperationDetails(destination.getUri()));
+            }
+        });
     }
 
     private static class ProgressLoggingReadableContent implements ReadableContent {
@@ -58,6 +85,17 @@ public class ProgressLoggingExternalResourceUploader extends AbstractProgressLog
         @Override
         public long getContentLength() {
             return delegate.getContentLength();
+        }
+    }
+
+    private static class PutOperationDetails extends LocationDetails implements ExternalResourceWriteBuildOperationType.Details {
+        private PutOperationDetails(URI location) {
+            super(location);
+        }
+
+        @Override
+        public String toString() {
+            return "ExternalResourceWriteBuildOperationType.Details{location=" + getLocation() + ", " + '}';
         }
     }
 }

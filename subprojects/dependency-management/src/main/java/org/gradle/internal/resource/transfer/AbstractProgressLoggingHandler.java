@@ -42,6 +42,18 @@ public class AbstractProgressLoggingHandler {
         return operationType.getCapitalized() + " " + resource.toString();
     }
 
+    protected static class LocationDetails {
+        private final URI location;
+
+        LocationDetails(URI location) {
+            this.location = location;
+        }
+
+        public String getLocation() {
+            return location.toASCIIString();
+        }
+    }
+
     protected static class ProgressLoggingInputStream extends InputStream {
         private final InputStream inputStream;
         private final ResourceOperation resourceOperation;
@@ -51,6 +63,10 @@ public class AbstractProgressLoggingHandler {
             this.resourceOperation = resourceOperation;
         }
 
+        public long getBytesRead() {
+            return resourceOperation.getTotalProcessedBytes();
+        }
+
         @Override
         public void close() throws IOException {
             inputStream.close();
@@ -58,11 +74,7 @@ public class AbstractProgressLoggingHandler {
 
         @Override
         public int read() throws IOException {
-            int result = inputStream.read();
-            if (result >= 0) {
-                doLogProgress(1);
-            }
-            return result;
+            throw new UnsupportedOperationException("Reading from a remote resource should be buffered.");
         }
 
         @Override
