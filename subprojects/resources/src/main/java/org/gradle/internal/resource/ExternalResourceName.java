@@ -47,13 +47,13 @@ public class ExternalResourceName implements Describable {
     public ExternalResourceName(String path) {
         encodedRoot = null;
         this.path = path;
-        this.encodedQuery = null;
+        this.encodedQuery = "";
     }
 
     private ExternalResourceName(String encodedRoot, String path) {
         this.encodedRoot = encodedRoot;
         this.path = path;
-        this.encodedQuery = null;
+        this.encodedQuery = "";
     }
 
     public ExternalResourceName(URI parent, String path) {
@@ -74,7 +74,7 @@ public class ExternalResourceName implements Describable {
         }
         this.encodedRoot = encodeRoot(parent);
         this.path = newPath;
-        this.encodedQuery = null;
+        this.encodedQuery = "";
     }
 
     private boolean isFileOnHost(URI uri) {
@@ -89,7 +89,11 @@ public class ExternalResourceName implements Describable {
     }
 
     private String extractQuery(URI uri) {
-        return uri.getRawQuery();
+        String rawQuery = uri.getRawQuery();
+        if (rawQuery == null) {
+            return "";
+        }
+        return "?" + rawQuery;
     }
 
     private String encodeRoot(URI uri) {
@@ -153,14 +157,10 @@ public class ExternalResourceName implements Describable {
      */
     public URI getUri() {
         try {
-            String pathAndQuery = encode(path, false);
-            if (encodedQuery!= null) {
-                pathAndQuery += "?" + encodedQuery;
-            }
             if (encodedRoot == null) {
-                return new URI(pathAndQuery);
+                return new URI(encode(path, false) + encodedQuery);
             }
-            return new URI(encodedRoot + pathAndQuery);
+            return new URI(encodedRoot + encode(path, true) + encodedQuery);
         } catch (URISyntaxException e) {
             throw UncheckedException.throwAsUncheckedException(e);
         }
