@@ -28,7 +28,6 @@ import org.gradle.tooling.BuildLauncher
 import org.gradle.tooling.events.BinaryPluginIdentifier
 import org.gradle.tooling.events.OperationType
 import org.gradle.tooling.events.ScriptPluginIdentifier
-import org.gradle.tooling.events.configuration.ProjectConfigurationOperationDescriptor
 import org.gradle.tooling.events.configuration.ProjectConfigurationOperationResult
 import org.gradle.util.GradleVersion
 import org.junit.Rule
@@ -65,6 +64,8 @@ class ProjectConfigurationProgressEventCrossVersionSpec extends ToolingApiSpecif
         runBuild("tasks")
 
         then:
+        events.operations.size() == 6
+        events.trees == events.operations
         containsSuccessfulProjectConfigurationOperation(":buildSrc", file("buildSrc"), ":")
         containsSuccessfulProjectConfigurationOperation(":buildSrc:a", file("buildSrc"), ":a")
         containsSuccessfulProjectConfigurationOperation(":", projectDir, ":")
@@ -76,10 +77,9 @@ class ProjectConfigurationProgressEventCrossVersionSpec extends ToolingApiSpecif
     void containsSuccessfulProjectConfigurationOperation(String displayName, TestFile rootDir, String projectPath) {
         with(events.operation("Configure project $displayName")) {
             assert successful
-            assert projectConfiguration
-            def projectConfigurationDescriptor = (ProjectConfigurationOperationDescriptor) descriptor
-            assert projectConfigurationDescriptor.project.projectPath == projectPath
-            assert projectConfigurationDescriptor.project.buildIdentifier.rootDir == rootDir
+            assertIsProjectConfiguration()
+            assert descriptor.project.projectPath == projectPath
+            assert descriptor.project.buildIdentifier.rootDir == rootDir
         }
     }
 
@@ -96,7 +96,7 @@ class ProjectConfigurationProgressEventCrossVersionSpec extends ToolingApiSpecif
         thrown(BuildException)
         with(events.operation("Configure project :")) {
             failed
-            projectConfiguration
+            assertIsProjectConfiguration()
             failures.size() == 1
             with(failures[0]) {
                 message == "A problem occurred configuring root project 'root'."
@@ -402,6 +402,7 @@ class ProjectConfigurationProgressEventCrossVersionSpec extends ToolingApiSpecif
             def launcher = newBuild()
                 .forTasks(task)
                 .addProgressListener(events, operationTypes)
+            collectOutputs(launcher)
             config.execute(launcher)
             launcher.run()
         }

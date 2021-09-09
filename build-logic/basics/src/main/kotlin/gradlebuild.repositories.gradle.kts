@@ -32,5 +32,12 @@ repositories {
             includeGroupByRegex("com\\.android\\.tools(\\.[a-z.\\-]*)?")
         }
     }
+    maven {
+        name = "CHAMP libs"
+        url = uri("https://releases.usethesource.io/maven/")
+        mavenContent {
+            includeGroup("io.usethesource")
+        }
+    }
     mavenCentral()
 }

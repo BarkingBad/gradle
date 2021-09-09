@@ -12,7 +12,7 @@ plugins {
 }
 
 val antVersion = "1.10.9"
-val archunitVersion = "0.20.0"
+val archunitVersion = "0.20.1"
 val asmVersion = "9.1"
 val awsS3Version = "1.11.948"
 val bouncycastleVersion = "1.68"
@@ -43,9 +43,10 @@ dependencies {
         api(libs.awsS3S3)               { version { strictly(awsS3Version) }}
         api(libs.awsS3Sts)              { version { strictly(awsS3Version) }}
         api(libs.bouncycastlePgp)       { version { strictly(bouncycastleVersion) }}
-        api(libs.bouncycastlePkix)       { version { strictly(bouncycastleVersion) }}
+        api(libs.bouncycastlePkix)      { version { strictly(bouncycastleVersion) }}
         api(libs.bouncycastleProvider)  { version { strictly(bouncycastleVersion) }}
         api(libs.bsh)                   { version { strictly("2.0b6") }}
+        api(libs.capsule)               { version { strictly("0.6.3") }}
         api(libs.commonsCodec)          { version { strictly("1.15") }}
         api(libs.commonsCompress)       { version { strictly("1.20") }}
         api(libs.commonsHttpclient)     { version { strictly("4.5.13") }}

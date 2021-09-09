@@ -10,6 +10,8 @@ pluginManagement {
                 includeVersionByRegex("com.gradle", "gradle-enterprise-gradle-plugin", rcAndMilestonesPattern)
                 includeVersionByRegex("com.gradle.enterprise", "test-distribution-gradle-plugin", rcAndMilestonesPattern)
                 includeVersionByRegex("com.gradle.enterprise.test-distribution", "com.gradle.enterprise.test-distribution.gradle.plugin", rcAndMilestonesPattern)
+                includeVersionByRegex("com.gradle.internal", "test-selection-gradle-plugin", rcAndMilestonesPattern)
+                includeVersionByRegex("com.gradle.internal.test-selection", "com.gradle.internal.test-selection.gradle.plugin", rcAndMilestonesPattern)
             }
         }
         gradlePluginPortal()
@@ -17,10 +19,12 @@ pluginManagement {
 }
 
 plugins {
-    id("com.gradle.enterprise").version("3.6.3")
+    id("com.gradle.enterprise").version("3.6.4")
     id("com.gradle.enterprise.gradle-enterprise-conventions-plugin").version("0.7.2")
     id("gradlebuild.base.allprojects")
-    id("com.gradle.enterprise.test-distribution").version("2.1") // Sync with `build-logic/build-platform/build.gradle.kts`
+    id("com.gradle.enterprise.test-distribution").version("2.1.1") // Sync with `build-logic/build-platform/build.gradle.kts`
+    id("gradlebuild.internal.testfiltering")
+    id("com.gradle.internal.test-selection").version("0.6.4-rc-1")
 }
 
 includeBuild("build-logic-commons")

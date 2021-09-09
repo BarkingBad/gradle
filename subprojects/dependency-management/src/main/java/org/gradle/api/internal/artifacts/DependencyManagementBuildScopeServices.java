@@ -129,19 +129,17 @@ import org.gradle.api.internal.resources.ApiTextResourceAdapter;
 import org.gradle.api.internal.runtimeshaded.RuntimeShadedJarFactory;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ProviderFactory;
-import org.gradle.cache.CacheRepository;
-import org.gradle.cache.internal.CacheScopeMapping;
 import org.gradle.cache.internal.CleaningInMemoryCacheDecoratorFactory;
 import org.gradle.cache.internal.GeneratedGradleJarCache;
 import org.gradle.cache.internal.InMemoryCacheDecoratorFactory;
 import org.gradle.cache.internal.ProducerGuard;
+import org.gradle.cache.scopes.BuildScopedCache;
+import org.gradle.cache.scopes.GlobalScopedCache;
 import org.gradle.caching.internal.origin.OriginMetadata;
 import org.gradle.configuration.internal.UserCodeApplicationContext;
 import org.gradle.initialization.DependenciesAccessors;
 import org.gradle.initialization.ProjectAccessListener;
 import org.gradle.initialization.internal.InternalBuildFinishedListener;
-import org.gradle.initialization.layout.BuildLayout;
-import org.gradle.initialization.layout.ProjectCacheDir;
 import org.gradle.internal.Try;
 import org.gradle.internal.build.BuildState;
 import org.gradle.internal.build.BuildStateRegistry;
@@ -159,10 +157,11 @@ import org.gradle.internal.execution.UnitOfWork;
 import org.gradle.internal.execution.WorkValidationContext;
 import org.gradle.internal.execution.caching.CachingState;
 import org.gradle.internal.execution.fingerprint.InputFingerprinter;
-import org.gradle.internal.execution.history.AfterPreviousExecutionState;
+import org.gradle.internal.execution.history.AfterExecutionState;
 import org.gradle.internal.execution.history.BeforeExecutionState;
 import org.gradle.internal.execution.history.ExecutionHistoryStore;
 import org.gradle.internal.execution.history.OverlappingOutputDetector;
+import org.gradle.internal.execution.history.PreviousExecutionState;
 import org.gradle.internal.execution.history.changes.ExecutionStateChangeDetector;
 import org.gradle.internal.execution.impl.DefaultExecutionEngine;
 import org.gradle.internal.execution.steps.AssignWorkspaceStep;
@@ -175,7 +174,7 @@ import org.gradle.internal.execution.steps.CreateOutputsStep;
 import org.gradle.internal.execution.steps.ExecuteStep;
 import org.gradle.internal.execution.steps.IdentifyStep;
 import org.gradle.internal.execution.steps.IdentityCacheStep;
-import org.gradle.internal.execution.steps.LoadExecutionStateStep;
+import org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep;
 import org.gradle.internal.execution.steps.RemovePreviousOutputsStep;
 import org.gradle.internal.execution.steps.ResolveChangesStep;
 import org.gradle.internal.execution.steps.ResolveInputChangesStep;
@@ -223,7 +222,6 @@ import org.gradle.internal.resource.transfer.CachingTextUriResourceLoader;
 import org.gradle.internal.resource.transport.http.HttpConnectorFactory;
 import org.gradle.internal.service.ServiceRegistration;
 import org.gradle.internal.service.ServiceRegistry;
-import org.gradle.internal.snapshot.FileSystemSnapshot;
 import org.gradle.internal.snapshot.ValueSnapshot;
 import org.gradle.internal.snapshot.ValueSnapshotter;
 import org.gradle.internal.typeconversion.NotationParser;
@@ -548,12 +546,6 @@ class DependencyManagementBuildScopeServices {
         return new ConnectionFailureRepositoryDisabler();
     }
 
-    StartParameterResolutionOverride createStartParameterResolutionOverride(StartParameter startParameter, BuildLayout buildLayout) {
-        File rootDirectory = buildLayout.getRootDirectory();
-        File gradleDir = new File(rootDirectory, "gradle");
-        return new StartParameterResolutionOverride(startParameter, gradleDir);
-    }
-
     DependencyVerificationOverride createDependencyVerificationOverride(StartParameterResolutionOverride startParameterResolutionOverride,
                                                                         BuildOperationExecutor buildOperationExecutor,
                                                                         ChecksumService checksumService,
@@ -674,15 +666,15 @@ class DependencyManagementBuildScopeServices {
     }
 
     ComponentMetadataRuleExecutor createComponentMetadataRuleExecutor(ValueSnapshotter valueSnapshotter,
-                                                                      CacheRepository cacheRepository,
+                                                                      GlobalScopedCache globalScopedCache,
                                                                       InMemoryCacheDecoratorFactory cacheDecoratorFactory,
                                                                       BuildCommencedTimeProvider timeProvider,
                                                                       ModuleComponentResolveMetadataSerializer serializer) {
-        return new ComponentMetadataRuleExecutor(cacheRepository, cacheDecoratorFactory, valueSnapshotter, timeProvider, serializer);
+        return new ComponentMetadataRuleExecutor(globalScopedCache, cacheDecoratorFactory, valueSnapshotter, timeProvider, serializer);
     }
 
     ComponentMetadataSupplierRuleExecutor createComponentMetadataSupplierRuleExecutor(ValueSnapshotter snapshotter,
-                                                                                      CacheRepository cacheRepository,
+                                                                                      GlobalScopedCache globalScopedCache,
                                                                                       InMemoryCacheDecoratorFactory cacheDecoratorFactory,
                                                                                       final BuildCommencedTimeProvider timeProvider,
                                                                                       SuppliedComponentMetadataSerializer suppliedComponentMetadataSerializer,
@@ -695,17 +687,16 @@ class DependencyManagementBuildScopeServices {
                 }
             });
         }
-        return new ComponentMetadataSupplierRuleExecutor(cacheRepository, cacheDecoratorFactory, snapshotter, timeProvider, suppliedComponentMetadataSerializer);
+        return new ComponentMetadataSupplierRuleExecutor(globalScopedCache, cacheDecoratorFactory, snapshotter, timeProvider, suppliedComponentMetadataSerializer);
     }
 
-    SignatureVerificationServiceFactory createSignatureVerificationServiceFactory(CacheRepository cacheRepository,
+    SignatureVerificationServiceFactory createSignatureVerificationServiceFactory(GlobalScopedCache globalScopedCache,
                                                                                   InMemoryCacheDecoratorFactory decoratorFactory,
                                                                                   List<ResourceConnectorFactory> resourceConnectorFactories,
                                                                                   BuildOperationExecutor buildOperationExecutor,
                                                                                   BuildCommencedTimeProvider timeProvider,
+                                                                                  BuildScopedCache buildScopedCache,
                                                                                   FileHasher fileHasher,
-                                                                                  CacheScopeMapping scopeCacheMapping,
-                                                                                  ProjectCacheDir projectCacheDir,
                                                                                   StartParameter startParameter) {
         HttpConnectorFactory httpConnectorFactory = null;
         for (ResourceConnectorFactory factory : resourceConnectorFactories) {
@@ -717,7 +708,7 @@ class DependencyManagementBuildScopeServices {
         if (httpConnectorFactory == null) {
             throw new IllegalStateException("Cannot find HttpConnectorFactory");
         }
-        return new DefaultSignatureVerificationServiceFactory(httpConnectorFactory, cacheRepository, decoratorFactory, buildOperationExecutor, fileHasher, scopeCacheMapping, projectCacheDir, timeProvider, startParameter.isRefreshKeys());
+        return new DefaultSignatureVerificationServiceFactory(httpConnectorFactory, globalScopedCache, decoratorFactory, buildOperationExecutor, fileHasher, buildScopedCache, timeProvider, startParameter.isRefreshKeys());
     }
 
     private void registerBuildFinishedHooks(ListenerManager listenerManager, DependencyVerificationOverride dependencyVerificationOverride) {
@@ -768,7 +759,7 @@ class DependencyManagementBuildScopeServices {
             new IdentifyStep<>(
             new IdentityCacheStep<>(
             new AssignWorkspaceStep<>(
-            new LoadExecutionStateStep<>(
+            new LoadPreviousExecutionStateStep<>(
             new CaptureStateBeforeExecutionStep(buildOperationExecutor, classLoaderHierarchyHasher, outputSnapshotter, overlappingOutputDetector,
             new ValidateStep<>(virtualFileSystem, validationWarningRecorder,
             new NoOpCachingStateStep(
@@ -803,8 +794,8 @@ class DependencyManagementBuildScopeServices {
                 }
 
                 @Override
-                public Optional<String> getRebuildReason() {
-                    return context.getRebuildReason();
+                public Optional<String> getNonIncrementalReason() {
+                    return context.getNonIncrementalReason();
                 }
 
                 @Override
@@ -838,8 +829,8 @@ class DependencyManagementBuildScopeServices {
                 }
 
                 @Override
-                public Optional<AfterPreviousExecutionState> getAfterPreviousExecutionState() {
-                    return context.getAfterPreviousExecutionState();
+                public Optional<PreviousExecutionState> getPreviousExecutionState() {
+                    return context.getPreviousExecutionState();
                 }
 
                 @Override
@@ -864,8 +855,8 @@ class DependencyManagementBuildScopeServices {
                 }
 
                 @Override
-                public ImmutableSortedMap<String, FileSystemSnapshot> getOutputFilesProduceByWork() {
-                    return result.getOutputFilesProduceByWork();
+                public Optional<AfterExecutionState> getAfterExecutionState() {
+                    return result.getAfterExecutionState();
                 }
 
                 @Override

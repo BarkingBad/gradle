@@ -45,6 +45,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
+import org.gradle.api.tasks.IgnoreEmptyDirectories;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
@@ -664,6 +665,9 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
         if (!javaVersion.isJava6Compatible()) {
             throw new UnsupportedJavaRuntimeException("Support for test execution using Java 5 or earlier was removed in Gradle 3.0.");
         }
+        if (!javaVersion.isJava8Compatible() && testFramework instanceof JUnitPlatformTestFramework) {
+            throw new UnsupportedJavaRuntimeException("Running tests with JUnit platform requires a Java 8+ toolchain.");
+        }
 
         if (getDebug()) {
             getLogger().info("Running tests for remote debugging.");
@@ -1126,9 +1130,10 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
      *
      * @return The candidate class files.
      */
-    @PathSensitive(PathSensitivity.RELATIVE)
     @InputFiles
     @SkipWhenEmpty
+    @IgnoreEmptyDirectories
+    @PathSensitive(PathSensitivity.RELATIVE)
     public FileTree getCandidateClassFiles() {
         return getTestClassesDirs().getAsFileTree().matching(patternSet);
     }

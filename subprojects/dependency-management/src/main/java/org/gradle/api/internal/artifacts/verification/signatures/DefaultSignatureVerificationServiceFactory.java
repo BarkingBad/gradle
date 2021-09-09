@@ -21,10 +21,9 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
-import org.gradle.cache.CacheRepository;
-import org.gradle.cache.internal.CacheScopeMapping;
 import org.gradle.cache.internal.InMemoryCacheDecoratorFactory;
-import org.gradle.initialization.layout.ProjectCacheDir;
+import org.gradle.cache.scopes.BuildScopedCache;
+import org.gradle.cache.scopes.GlobalScopedCache;
 import org.gradle.internal.UncheckedException;
 import org.gradle.internal.hash.FileHasher;
 import org.gradle.internal.operations.BuildOperationExecutor;
@@ -33,11 +32,9 @@ import org.gradle.internal.resource.transfer.ExternalResourceConnector;
 import org.gradle.internal.resource.transport.http.HttpConnectorFactory;
 import org.gradle.security.internal.EmptyPublicKeyService;
 import org.gradle.security.internal.Fingerprint;
-import org.gradle.security.internal.KeyringFilePublicKeyService;
 import org.gradle.security.internal.PublicKeyDownloadService;
 import org.gradle.security.internal.PublicKeyResultBuilder;
 import org.gradle.security.internal.PublicKeyService;
-import org.gradle.security.internal.PublicKeyServiceChain;
 import org.gradle.security.internal.SecuritySupport;
 import org.gradle.util.internal.BuildCommencedTimeProvider;
 
@@ -53,22 +50,20 @@ import static org.gradle.security.internal.SecuritySupport.toLongIdHexString;
 
 public class DefaultSignatureVerificationServiceFactory implements SignatureVerificationServiceFactory {
     private final HttpConnectorFactory httpConnectorFactory;
-    private final CacheRepository cacheRepository;
+    private final GlobalScopedCache cacheRepository;
     private final InMemoryCacheDecoratorFactory decoratorFactory;
     private final BuildOperationExecutor buildOperationExecutor;
     private final FileHasher fileHasher;
-    private final CacheScopeMapping scopeCacheMapping;
-    private final ProjectCacheDir projectCacheDir;
+    private final BuildScopedCache buildScopedCache;
     private final BuildCommencedTimeProvider timeProvider;
     private final boolean refreshKeys;
 
     public DefaultSignatureVerificationServiceFactory(HttpConnectorFactory httpConnectorFactory,
-                                                      CacheRepository cacheRepository,
+                                                      GlobalScopedCache cacheRepository,
                                                       InMemoryCacheDecoratorFactory decoratorFactory,
                                                       BuildOperationExecutor buildOperationExecutor,
                                                       FileHasher fileHasher,
-                                                      CacheScopeMapping scopeCacheMapping,
-                                                      ProjectCacheDir projectCacheDir,
+                                                      BuildScopedCache buildScopedCache,
                                                       BuildCommencedTimeProvider timeProvider,
                                                       boolean refreshKeys) {
         this.httpConnectorFactory = httpConnectorFactory;
@@ -76,14 +71,13 @@ public class DefaultSignatureVerificationServiceFactory implements SignatureVeri
         this.decoratorFactory = decoratorFactory;
         this.buildOperationExecutor = buildOperationExecutor;
         this.fileHasher = fileHasher;
-        this.scopeCacheMapping = scopeCacheMapping;
-        this.projectCacheDir = projectCacheDir;
+        this.buildScopedCache = buildScopedCache;
         this.timeProvider = timeProvider;
         this.refreshKeys = refreshKeys;
     }
 
     @Override
-    public SignatureVerificationService create(File keyringsFile, List<URI> keyServers, boolean useKeyServers) {
+    public SignatureVerificationService create(BuildTreeDefinedKeys keyrings, List<URI> keyServers, boolean useKeyServers) {
         boolean refreshKeys = this.refreshKeys || !useKeyServers;
         ExternalResourceConnector connector = httpConnectorFactory.createResourceConnector(new ResourceConnectorSpecification() {
         });
@@ -94,20 +88,12 @@ public class DefaultSignatureVerificationServiceFactory implements SignatureVeri
         } else {
             keyService = EmptyPublicKeyService.getInstance();
         }
-        if (!keyringsFile.exists()) {
-            keyringsFile = SecuritySupport.asciiArmoredFileFor(keyringsFile);
-        }
-        if (keyringsFile.exists()) {
-            KeyringFilePublicKeyService keyringFilePublicKeyService = new KeyringFilePublicKeyService(keyringsFile);
-            keyService = PublicKeyServiceChain.of(keyringFilePublicKeyService, keyService);
-        }
+        keyService = keyrings.applyTo(keyService);
         DefaultSignatureVerificationService delegate = new DefaultSignatureVerificationService(keyService);
         return new CrossBuildSignatureVerificationService(
             delegate,
             fileHasher,
-            scopeCacheMapping,
-            projectCacheDir,
-            cacheRepository,
+            buildScopedCache,
             decoratorFactory,
             timeProvider,
             refreshKeys
